@@ -8,4 +8,4 @@ import Modelio
 main :: IO ()
 main = do
     file <- Modelio.loadModel "models/sphere.ply"
-    print $ file
+    print file
