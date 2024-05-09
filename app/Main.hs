@@ -1,11 +1,11 @@
 module Main where
 
-import Modelio
+import qualified Data.Vector as V
 
-(|>) :: t1 -> (t1 -> t2) -> t2
-(|>) a f = f a
+import Modelio
+import Scene (ShapeData(triangles, positions, normals))
 
 main :: IO ()
 main = do
-    file <- Modelio.loadModel "models/sphere.ply"
+    file <- Modelio.loadShape "models/sphere.ply"
     print file
