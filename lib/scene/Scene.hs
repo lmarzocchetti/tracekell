@@ -24,6 +24,21 @@ data ShapeData = ShapeData {
 
 consShapeData = ShapeData
 
+addMissingRadius :: Float -> ShapeData -> ShapeData
+addMissingRadius rad (ShapeData {points=points, lines=lines, triangles=triangles, quads=quads, positions=positions, normals=normals, texcoords=texcoords, colors=colors, radius=radius, tangents=tangents})
+  | (not isEmptyPoints || not isEmptyLines) && isEmptyRadius =
+    ShapeData {points=points, lines=lines, triangles=triangles, quads=quads, positions=positions, normals=normals, texcoords=texcoords, colors=colors, radius=V.fromList (replicate (V.length positions) rad), tangents=tangents}
+  | otherwise =
+    ShapeData {points=points, lines=lines, triangles=triangles, quads=quads, positions=positions, normals=normals, texcoords=texcoords, colors=colors, radius=radius, tangents=tangents}
+    where
+      isEmptyPoints = V.length points == 0
+      isEmptyLines = V.length lines == 0
+      isEmptyRadius = V.length radius == 0
+
+addMissingRadiusV :: Float -> SceneData -> SceneData
+addMissingRadiusV rad (SceneData {cameras=_cameras, instances=_instances, environments=_environments, shapes=_shapes, textures=_textures, materials=_materials, cameraNames=_cameraNames, textureNames=_textureNames, materialNames=_materialNames, shapeNames=_shapeNames, instanceNames=_instanceNames, environmentNames=_environmentNames}) = 
+  SceneData {cameras=_cameras, instances=_instances, environments=_environments, shapes=V.map (addMissingRadius rad) _shapes, textures=_textures, materials=_materials, cameraNames=_cameraNames, textureNames=_textureNames, materialNames=_materialNames, shapeNames=_shapeNames, instanceNames=_instanceNames, environmentNames=_environmentNames}
+
 data CameraData = CameraData {
   cameraFrame :: Frame3f,
   orthographic :: Bool,
@@ -40,11 +55,11 @@ consCameraData = CameraData
 
 defaultCameraData = CameraData {
   cameraFrame = defaultFrame3f,
-  orthographic = False, 
-  lens = 0.050, 
-  film = 0.036, 
-  aspect = 1.500, 
-  focus = 10000, 
+  orthographic = False,
+  lens = 0.050,
+  film = 0.036,
+  aspect = 1.500,
+  focus = 10000,
   aperture = 0
 }
 
@@ -77,17 +92,17 @@ data TextureData = TextureData {
   deriving (Show)
 
 consTextureData = TextureData
-defaultTextureData = 
-  consTextureData 
+defaultTextureData =
+  consTextureData
     (consImage (consVec2i 0 0) (V.fromList []))
     (consImage (consVec2i 0 0) (V.fromList []))
     False
     False
 
-data MaterialType = 
-    MATTE 
-  | GLOSSY 
-  | REFLECTIVE 
+data MaterialType =
+    MATTE
+  | GLOSSY
+  | REFLECTIVE
   | TRANSPARENT
   | REFRACTIVE
   | SUBSURFACE
@@ -116,7 +131,7 @@ data MaterialData = MaterialData {
   deriving (Show)
 
 consMaterialData = MaterialData
-defaultMaterialData = 
+defaultMaterialData =
   consMaterialData
     MATTE
     (consVec3f 0 0 0)
@@ -134,7 +149,7 @@ defaultMaterialData =
     (-1)
     (-1)
 
-defaultMaterialDataColorType matType matColor = 
+defaultMaterialDataColorType matType matColor =
   consMaterialData
     matType
     (consVec3f 0 0 0)
@@ -170,7 +185,7 @@ data SceneData = SceneData {
   deriving (Show)
 
 consSceneData = SceneData
-defaultSceneData = 
+defaultSceneData =
   consSceneData
     (V.fromList [])
     (V.fromList [])
@@ -184,4 +199,33 @@ defaultSceneData =
     (V.fromList [])
     (V.fromList [])
     (V.fromList [])
-    
+
+defaultSceneDataForCalculateCameraData instance_data shape_data material_data =
+  consSceneData
+    (V.fromList [])
+    (V.fromList [instance_data])
+    (V.fromList [])
+    (V.fromList [shape_data])
+    (V.fromList [])
+    (V.fromList [material_data])
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])
+
+defaultSceneDataForPlyScenes camera_data instance_data environment_data shape_data material_data =
+  consSceneData
+    (V.fromList [camera_data])
+    instance_data
+    (V.fromList [environment_data])
+    shape_data
+    (V.fromList [])
+    material_data
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])
+    (V.fromList [])

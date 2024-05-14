@@ -59,7 +59,7 @@ library math
     exposed-modules: Math
     build-depends:    base ^>=4.17.2.1
     default-language: Haskell2010
-    default-extensions: DuplicateRecordFields, MultiParamTypeClasses
+    default-extensions: DuplicateRecordFields, MultiParamTypeClasses, Strict 
 
 library raytracing
     hs-source-dirs: lib/raytracing
@@ -73,19 +73,21 @@ library scene
     exposed-modules: Scene
     build-depends:    base ^>=4.17.2.1, vector, math, image
     default-language: Haskell2010
+    default-extensions: Strict
 
 library image
     hs-source-dirs: lib/image
     exposed-modules: Image
     build-depends:    base ^>=4.17.2.1, vector, math
     default-language: Haskell2010
+    default-extensions: Strict
 
 library modelio
     hs-source-dirs: lib/modelio
     exposed-modules: Modelio
-    build-depends:    base ^>=4.17.2.1, vector, text, scene, math
+    build-depends:    base ^>=4.17.2.1, vector, text, scene, math, raytracing
     default-language: Haskell2010
-    default-extensions: DuplicateRecordFields, OverloadedStrings, NamedFieldPuns
+    default-extensions: DuplicateRecordFields, OverloadedStrings, NamedFieldPuns, Strict
 
 executable tracekell
     -- Import common warning flags.

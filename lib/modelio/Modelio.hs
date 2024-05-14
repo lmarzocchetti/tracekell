@@ -2,11 +2,12 @@ module Modelio where
 import Data.Int
 import Data.Word (Word16, Word8, Word32)
 import GHC.TypeError (ErrorMessage(Text))
-import Scene (ShapeData (ShapeData), consShapeData, SceneData (SceneData), consInstanceData, consMaterialData, defaultMaterialDataColorType, MaterialType (MATTE), CameraData (CameraData))
+import Scene (ShapeData (ShapeData, points, lines, radius), consShapeData, SceneData (SceneData, instances, shapes, materials), consInstanceData, consMaterialData, defaultMaterialDataColorType, MaterialType (MATTE), CameraData (CameraData), consCameraData, consSceneData, defaultSceneDataForCalculateCameraData, addMissingRadiusV, consEnvironmentData, defaultSceneDataForPlyScenes)
 import qualified Data.Text as Text
 import System.Exit (die)
 import qualified Data.Vector as V
-import Math (Vec3f(Vec3f), consVec3f, (|>), Vec2f, Vec4f, Vec4i, Vec3i, Vec2i, consVec3i, defaultFrame3f)
+import Math (Vec3f(Vec3f), consVec3f, (|>), Vec2f, Vec4f, Vec4i, Vec3i, Vec2i, consVec3i, defaultFrame3f, Add (add), Div (divi), Norm (norm), Sub (sub), Mul (mult), lookAtFrame)
+import Raytracing (computeBounds, Bbox3f (min, max))
 
 -- PLY MODEL
 
@@ -52,14 +53,11 @@ type PlyHeader = [PlyElement]
 parsePropertyHeader :: String -> PlyProperty
 parsePropertyHeader prop =
   case propType of
-    "list" -> PlyList {name = propListName, contentType = propListType, contentList = []}
-    _ -> PlySingle {name = propName, contentType = propType, contentSingle = []}
+    "list" -> PlyList {name = splitted !! 4, contentType = splitted !! 3, contentList = []}
+    _ -> PlySingle {name = splitted !! 2, contentType = propType, contentSingle = []}
   where
     splitted = words prop
     propType = splitted !! 1
-    propName = splitted !! 2
-    propListType = splitted !! 3
-    propListName = splitted !! 4
 
 parseElementHeader :: [String] -> PlyElement
 parseElementHeader cont = PlyElement {elemName = elementName, count = elementCount, properties = elementProps}
@@ -142,7 +140,7 @@ parseFile file = cont header
 loadModel :: String -> IO PlyModel
 loadModel filename = do
     file <- readFile filename
-    pure $ parseFile $ tail $ lines file
+    pure $ parseFile $ tail $ Prelude.lines file
 
 -- SHAPE PARTS
 
@@ -152,9 +150,9 @@ vertGet n model =
     |> head
     |> properties
     |> filter (\x -> name x == n)
-    |> (\x -> 
+    |> (\x ->
       if null x
-      then [] 
+      then []
       else x
         |> head
         |> contentSingle
@@ -229,9 +227,8 @@ loadShape filename =
   where
     extension = Text.unpack $ last $ Text.splitOn "." (Text.pack filename)
 
--- TODO: Da finire
 calculateMissingCamera :: SceneData -> CameraData
-calculateMissingCamera sceneData = CameraData {}
+calculateMissingCamera sceneData = consCameraData frame cameraOrtographic cameraLens cameraFilm cameraAspect focus cameraAperture
   where
     cameraName = "Camera"
     cameraOrtographic = False
@@ -239,13 +236,26 @@ calculateMissingCamera sceneData = CameraData {}
     cameraAspect = 16.0 / 9.0
     cameraAperture = 0
     cameraLens = 0.050
-    
+    bbox = computeBounds sceneData
+    center = Math.divi (Math.add (Raytracing.min bbox) (Raytracing.max bbox)) (2 :: Float)
+    bboxRadius = norm (sub (Raytracing.max bbox) (Raytracing.min bbox)) / (2 :: Float)
+    cameraDir = consVec3f 0 0 1
+    cameraDist = (bboxRadius * cameraLens / (cameraFilm / cameraAspect)) * 2
+    from = add (mult cameraDir cameraDist) center
+    to = center
+    up = consVec3f 0 1 0
+    frame = lookAtFrame from to up
+    focus = norm (sub from to) :: Float
 
 -- TODO: Da finire
-loadPlyScene :: String  -> SceneData
-loadPlyScene filename = SceneData {}
-  where
-    shapeData = loadShape filename
-    shapeInstance = consInstanceData defaultFrame3f 0 0
-    shapeMaterial = defaultMaterialDataColorType MATTE (consVec3f 0.8 0.8 0.8)
+loadPlyScene :: String  -> IO SceneData
+loadPlyScene filename = do
+  shapeData <- loadShape filename
+  let instanceData = consInstanceData defaultFrame3f 0 0
+  let materialData = defaultMaterialDataColorType MATTE (consVec3f 0.8 0.8 0.8)
+  let sceneData = defaultSceneDataForCalculateCameraData instanceData shapeData materialData
 
+  let cameraData = calculateMissingCamera sceneData
+  let sceneData2 = addMissingRadiusV 0.001 sceneData
+  let environmentData = consEnvironmentData defaultFrame3f (consVec3f 1 1 1) (-1)
+  pure $ defaultSceneDataForPlyScenes cameraData (instances sceneData2) environmentData (shapes sceneData2) (materials sceneData2)

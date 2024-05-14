@@ -7,14 +7,29 @@ import Data.Word (Word8)
 class Add a where
   add :: a -> a -> a
 
+class Sub a where
+  sub :: a -> a -> a
+
 class Mul a b where
   mult :: a -> b -> a
+
+class Div a b where
+  divi :: a -> b -> a
 
 class Minable a where
   min :: a -> a -> a
 
 class Maxable a where
   max :: a -> a -> a
+
+class CrossProd a where
+  cross :: a -> a -> a
+
+class DotProd a b where
+  dot :: a -> a -> b
+
+class DotProd a b => Norm a b where
+  norm :: a -> b
 
 data Vec2i = Vec2i {
   x :: Int,
@@ -32,6 +47,10 @@ data Vec3i = Vec3i {
   deriving (Show)
 
 consVec3i x y z = Vec3i {x = x, y = y, z = z}
+
+vec3iGetX Vec3i {x = x, y = _, z = _} = x
+vec3iGetY Vec3i {x = _, y = y, z = _} = y
+vec3iGetZ Vec3i {x = _, y = _, z = z} = z
 
 data Vec4i = Vec4i {
   x :: Int,
@@ -71,8 +90,14 @@ data Vec3f = Vec3f {
 instance Add Vec3f where
   add (Vec3f {x = x, y = y, z = z}) (Vec3f {x = x', y = y', z = z'}) = Vec3f {x = x + x', y = y + y', z = z + z'}
 
+instance Sub Vec3f where
+  sub (Vec3f {x = x, y = y, z = z}) (Vec3f {x = x', y = y', z = z'}) = Vec3f {x = x - x', y = y - y', z = z - z'}
+
 instance Mul Vec3f Float where
   mult (Vec3f {x = x, y = y, z = z}) alpha = Vec3f {x = x * alpha, y = y * alpha, z = z * alpha}
+
+instance Div Vec3f Float where
+  divi (Vec3f {x = x, y = y, z = z}) alpha = Vec3f {x = x / alpha, y = y / alpha, z = z / alpha}
 
 instance Minable Vec3f where
   min (Vec3f {x = x, y = y, z = z}) (Vec3f {x = x', y = y', z = z'}) = Vec3f {x = Prelude.min x x', y = Prelude.min y y', z = Prelude.min z z'}
@@ -80,7 +105,21 @@ instance Minable Vec3f where
 instance Maxable Vec3f where
   max (Vec3f {x = x, y = y, z = z}) (Vec3f {x = x', y = y', z = z'}) = Vec3f {x = Prelude.max x x', y = Prelude.max y y', z = Prelude.max z z'}
 
+instance CrossProd Vec3f where
+  cross (Vec3f {x = x, y = y, z = z}) (Vec3f {x = x', y = y', z = z'}) = Vec3f {x = y * z' - z * y', y = z * x' - x * z', z = x * y' - y * x'}
+
+instance DotProd Vec3f Float where
+  dot (Vec3f {x = x, y = y, z = z}) (Vec3f {x = x', y = y', z = z'}) = x * x' + y * y' + z * z'
+
+instance Norm Vec3f Float where
+  norm a = sqrt (dot a a)
+
 consVec3f x y z = Vec3f {x = x, y = y, z = z}
+
+normalize :: Vec3f -> Vec3f
+normalize a = if l /= (0 :: Float) then divi a l else a
+  where
+    l = norm a
 
 data Vec4f = Vec4f {
   x :: Float,
@@ -113,3 +152,10 @@ defaultFrame3f = Frame3f {
   z = Vec3f {x = 0, y = 0, z = 1},
   o = Vec3f {x = 0, y = 0, z = 0}
 }
+
+lookAtFrame :: Vec3f -> Vec3f -> Vec3f -> Frame3f
+lookAtFrame eye center up = consFrame3f u v w eye
+  where
+    w = normalize (sub eye center)
+    u = normalize (cross up w)
+    v = normalize (cross w u)
