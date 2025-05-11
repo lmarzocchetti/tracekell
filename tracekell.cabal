@@ -57,35 +57,35 @@ common warnings
 library math
     hs-source-dirs: lib/math
     exposed-modules: Math
-    build-depends:    base ^>=4.17.2.1
+    build-depends:    base ^>=4.18.3.0
     default-language: Haskell2010
     default-extensions: DuplicateRecordFields, MultiParamTypeClasses, Strict 
 
 library raytracing
     hs-source-dirs: lib/raytracing
     exposed-modules: Raytracing
-    build-depends:    base ^>=4.17.2.1, math, scene, vector
+    build-depends:    base ^>=4.18.3.0, math, scene, vector
     default-language: Haskell2010
     default-extensions: DuplicateRecordFields
 
 library scene
     hs-source-dirs: lib/scene
     exposed-modules: Scene
-    build-depends:    base ^>=4.17.2.1, vector, math, image
+    build-depends:    base ^>=4.18.3.0, vector, math, image
     default-language: Haskell2010
     default-extensions: Strict
 
 library image
     hs-source-dirs: lib/image
     exposed-modules: Image
-    build-depends:    base ^>=4.17.2.1, vector, math
+    build-depends:    base ^>=4.18.3.0, vector, math
     default-language: Haskell2010
     default-extensions: Strict
 
 library modelio
     hs-source-dirs: lib/modelio
     exposed-modules: Modelio
-    build-depends:    base ^>=4.17.2.1, vector, text, scene, math, raytracing
+    build-depends:    base ^>=4.18.3.0, vector, text, scene, math, raytracing
     default-language: Haskell2010
     default-extensions: DuplicateRecordFields, OverloadedStrings, NamedFieldPuns, Strict
 
@@ -103,7 +103,7 @@ executable tracekell
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.17.2.1, vector, text, math, modelio, scene
+    build-depends:    base ^>=4.18.3.0, vector, text, math, modelio, scene
 
     -- Directories containing source files.
     hs-source-dirs:   app
